@@ -22,52 +22,59 @@ module.exports = SpireGenerator = yeoman.generators.Base.extend({
   },
 
   askFor: function() {
-    var done = this.async();
-
+    var self = this;
     this.log(chalk.magenta('You\'re using the fantastic Spire generator.'));
 
-    var generateChoices = ['react'];//, 'angular'];
-    this.prompts.push({
+    return this.prompt([{
       name: 'generate',
       type: 'list',
       message: 'What kind of app would you like to generate?',
-      choices: generateChoices
-    });
-    this.prompts.push({
-      name: 'nwjs',
-      type: 'confirm',
-      message: 'Is this an nw.js project?',
-      default: false
-    });
-    this.prompts.push({
-      name: 'projectName',
-      type: 'input',
-      message: 'What is the name of your project? (no spaces, or symbols)',
-      default: process.cwd().split(path.sep).pop()
-    });
-    this.prompts.push({
-      name: 'projectDesc',
-      type: 'input',
-      message: 'Enter a brief project description'
-    });
-    this.prompts.push({
-      name: 'deployGh',
-      type: 'confirm',
-      message: 'Will this application be deployed to gh-pages?',
-      default: false
-    });
-
-    var self = this;
-    generateChoices.forEach(function(choice) {
-      self.config[choice] = false;
-    });
-    this.prompt(this.prompts, function(answers) {
+      choices: ['react'/*, 'angular'*/],
+    }])
+    .then(function (generateAnswers) {
+      if (answers.generate === 'react') {
+        return this.prompt([{
+          name: 'flux',
+          type: 'list',
+          message: 'Which Flux implementation would you like to generate?',
+          choices: ['alt', 'redux'],
+        }]).then(function (fluxAnswers) {
+          return Promise.resolve(merge(generateAnswers, fluxAnswers));
+        });
+      }
+      return Promise.resolve(generateAnswers);
+    })
+    .then(function (previousAnswers) {
+      this.prompt([{
+        name: 'nwjs',
+        type: 'confirm',
+        message: 'Is this an nw.js project?',
+        default: false
+      }, {
+        name: 'projectName',
+        type: 'input',
+        message: 'What is the name of your project? (no spaces, or symbols)',
+        default: process.cwd().split(path.sep).pop()
+      }, {
+        name: 'projectDesc',
+        type: 'input',
+        message: 'Enter a brief project description'
+      }, {
+        name: 'deployGh',
+        type: 'confirm',
+        message: 'Will this application be deployed to gh-pages?',
+        default: false
+      }])
+      .then(function(answers) {
+        return Promise.resolve(merge(previousAnswers, answers));
+      });
+    })
+    .then(function (answers) {
       var answer, question;
       for (question in answers) {
         answer = answers[question];
         self.config[question] = answer;
       }
-      return done();
     });
   },
 
