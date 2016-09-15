@@ -6,7 +6,7 @@ var SpireGenerator,
     path    = require('path'),
     merge   = require('lodash').merge;
 
-module.exports = SpireGenerator = yeoman.generators.Base.extend({
+module.exports = SpireGenerator = yeoman.Base.extend({
   constructor: function() {
     yeoman.generators.Base.apply(this, arguments);
   },
@@ -21,7 +21,7 @@ module.exports = SpireGenerator = yeoman.generators.Base.extend({
     }
   },
 
-  askFor: function() {
+  askFor: function () {
     var self = this;
     this.log(chalk.magenta('You\'re using the fantastic Spire generator.'));
 
@@ -29,23 +29,26 @@ module.exports = SpireGenerator = yeoman.generators.Base.extend({
       name: 'generate',
       type: 'list',
       message: 'What kind of app would you like to generate?',
-      choices: ['react'/*, 'angular'*/],
+      choices: [
+        'react',
+        // 'static',
+      ],
     }])
-    .then(function (generateAnswers) {
-      if (answers.generate === 'react') {
+    .then((generateAnswers) => {
+      if (generateAnswers.generate === 'react') {
         return this.prompt([{
           name: 'flux',
           type: 'list',
           message: 'Which Flux implementation would you like to generate?',
           choices: ['alt', 'redux'],
-        }]).then(function (fluxAnswers) {
+        }]).then((fluxAnswers) => {
           return Promise.resolve(merge(generateAnswers, fluxAnswers));
         });
       }
       return Promise.resolve(generateAnswers);
     })
-    .then(function (previousAnswers) {
-      this.prompt([{
+    .then((previousAnswers) => {
+      return this.prompt([{
         name: 'nwjs',
         type: 'confirm',
         message: 'Is this an nw.js project?',
@@ -69,7 +72,7 @@ module.exports = SpireGenerator = yeoman.generators.Base.extend({
         return Promise.resolve(merge(previousAnswers, answers));
       });
     })
-    .then(function (answers) {
+    .then((answers) => {
       var answer, question;
       for (question in answers) {
         answer = answers[question];
@@ -98,7 +101,7 @@ module.exports = SpireGenerator = yeoman.generators.Base.extend({
     this.fs.copy(this.templatePath('mocks'), this.destinationPath('mocks'));
 
     if (this.config.react) {
-      this.fs.copy(this.templatePath('_react/babelrc'), this.destinationPath('.babelrc'));
+      this.fs.copy(this.templatePath(`_react/_${this.config.flux}/babelrc`), this.destinationPath('.babelrc'));
     } else {
       this.fs.copy(this.templatePath('babelrc'), this.destinationPath('.babelrc'));
     }
@@ -126,7 +129,7 @@ module.exports = SpireGenerator = yeoman.generators.Base.extend({
 
     this.fs.copyTpl(this.templatePath('_src_app_index.html'), this.destinationPath('src/app/index.html'), this.config);
     this.fs.copy(this.templatePath('src'), this.destinationPath('src'));
-    this.fs.copy(this.templatePath('_react/__tests__'), this.destinationPath('__tests__'));
+    this.fs.copy(this.templatePath(`_react/_${this.config.flux}/__tests__`), this.destinationPath('__tests__'));
 
     // if (this.config.angular) {
     //   processPackage.bind(this, 'package.angular.json')();
@@ -140,10 +143,12 @@ module.exports = SpireGenerator = yeoman.generators.Base.extend({
     // }
 
     if (this.config.react) {
+      var reactPath = path.join('_react', `_${this.config.flux}`);
+
       processPackage.bind(this, 'package.react.json')();
 
-      this.fs.copy(this.templatePath('_react/src/app'), this.destinationPath('src/app'));
-      this.fs.copy(this.templatePath('_react/src/lib'), this.destinationPath('src/lib'));
+      this.fs.copy(this.templatePath(path.join(reactPath, 'src/app')), this.destinationPath('src/app'));
+      this.fs.copy(this.templatePath(path.join(reactPath, 'src/lib')), this.destinationPath('src/lib'));
     }
 
     if (this.config.deployGh) {
